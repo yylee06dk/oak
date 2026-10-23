@@ -1,0 +1,6 @@
+(executable
+ (public_name oak)
+ (name main)
+ (libraries oak angstrom)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.ord)))
