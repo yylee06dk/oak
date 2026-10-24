@@ -4,6 +4,7 @@ module TC = TypeChecker
 
 let tee f x = f x; x
 
+(* Debugging functions *)
 let printUtt utt =
   print_endline "UTT:";
   print_endline (Utt.show utt);
@@ -14,6 +15,7 @@ let printTt tt =
   print_endline (Tt.show tt);
   print_newline ()
 
+(* Where all the things come together! *)
 let rec repl () =
   Printf.printf ">> %!";
   match read_line () with

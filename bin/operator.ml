@@ -1,3 +1,7 @@
+(*
+  Arithmetic operators.
+  Lives in a separate module since operators are used all around the code
+*)
 type t = 
   | Plus
   | Minus
