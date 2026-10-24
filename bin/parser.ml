@@ -10,31 +10,37 @@ let spaces =
   skip_while (function ' ' | '\n' | '\t' | '\r' -> true | _ -> false)
 
 let parse_int =
-  digits >>| fun s -> Utt.Literal (Box.Int (int_of_string s))
+  digits >>| fun s -> Utt.Literal (Utt.Box.Int (int_of_string s))
 
 let parse_float =
   consumed (digits *> char '.' *> digits)
-  >>| fun s -> Utt.Literal (Box.Float (float_of_string s))
+  >>| fun s -> Utt.Literal (Utt.Box.Float (float_of_string s))
 
 let parse_literal =
   parse_float <|> parse_int
+  
+let term_operator =
+  spaces *> choice 
+    [ char '+' *> return Op.Plus;
+      char '-' *> return Op.Minus ]
 
+let factor_operator =
+  spaces *> choice 
+    [ char '*' *> return Op.Mult;
+      char '/' *> return Op.Div ]
+    
 let parse_expr =
   fix (fun expr ->
-    let group =
-      char '(' *> expr <* char ')'
-    in
-    let atom =
-      group <|> parse_literal
-    in
-    let factor =
+    let group = char '(' *> expr <* char ')' in
+    let atom = group <|> parse_literal in
+    let factor = 
       lift2 
         (fun first rest ->
         List.fold_left (fun tree (op, right) -> Utt.BinOp (tree, op, right)) first rest)
         atom (* first *)
         (many ( (* rest *)
           Pair.make <$>
-          (spaces *> (string "*" <|> string "/") >>| Op.read) <*>
+          factor_operator <*>
           (spaces *> atom)))
     in
     let term =

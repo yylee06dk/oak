@@ -10,16 +10,20 @@ exception TypeMismatch of string
 
 (* Traverses the tree to check type correctness *)
 let rec typeCheck utt =
+  let open Utt in
   match utt with
-  | Utt.Literal box ->
-    (match box with
-    | Box.Int n -> IntType (Tt.IntLiteral n)
-    | Box.Float f -> FloatType (Tt.FloatLiteral f))
-  | Utt.BinOp (l,op,r) ->
-    let ltree = typeCheck l in
-    let rtree = typeCheck r in
-      match ltree, rtree with
-      | IntType ltt, IntType rtt -> IntType (Tt.BinOpInt (ltt, op, rtt))
-      | FloatType ltt, FloatType rtt -> FloatType (Tt.BinOpFloat (ltt, op, rtt))
-      | _, _-> raise (TypeMismatch "Addition operator's operands both should have type \'int\' or \'float\'") 
+  | Literal (Box.Int n) ->
+    IntType (Tt.IntLiteral n)
+  | Literal (Box.Float f) -> 
+    FloatType (Tt.FloatLiteral f)
+  | BinOp (l,op,r) ->
+    let lRes = typeCheck l in
+    let rRes = typeCheck r in
+    match lRes, rRes with
+    | IntType ltree, IntType rtree -> 
+      IntType (Tt.BinOpInt (ltree, op, rtree))
+    | FloatType ltree, FloatType rtree -> 
+      FloatType (Tt.BinOpFloat (ltree, op, rtree))
+    | _, _-> 
+      raise (TypeMismatch "Addition operator's operands both should have type \'int\' or \'float\'") 
   
