@@ -1,4 +1,5 @@
+module Op = Operator
 type t =
   | Literal of Box.t
-  | Term of t * t
+  | BinOp of t * Op.t * t
   [@@deriving show]

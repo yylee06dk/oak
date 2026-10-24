@@ -1,8 +1,10 @@
+module Op = Operator
+
 type _ t =
   | IntLiteral : int -> int t 
   | FloatLiteral : float -> float t
-  | AddInt : int t * int t -> int t
-  | AddFloat : float t * float t -> float t
+  | BinOpInt : int t * Op.t * int t -> int t
+  | BinOpFloat : float t * Op.t * float t -> float t
 
 let rec pp : type a. Format.formatter -> a t -> unit =
 
@@ -10,10 +12,12 @@ let rec pp : type a. Format.formatter -> a t -> unit =
     match tree with
     | IntLiteral n -> fprintf fmt "(IntLiteral %d)" n
     | FloatLiteral f -> fprintf fmt "(FloatLiteral %g)" f
-    | AddInt (l, r) ->
-        fprintf fmt "@[<hov2>(AddInt@ %a@ %a)@]" pp l pp r
-    | AddFloat (l, r) ->
-        fprintf fmt "@[<hov2>(AddFloat@ %a@ %a)@]" pp l pp r
+    | BinOpInt (l, op, r) ->
+        fprintf fmt "@[<hov 2>(BinOpInt@ %a@ %a@ %a)@]"
+          pp l Op.pp op pp r
+    | BinOpFloat (l, op, r) ->
+        fprintf fmt "@[<hov 2>(BinOpFloat@ %a@ %a@ %a)@]"
+          pp l Op.pp op pp r
 
 let show tree =
   Format.asprintf "%a" pp tree

@@ -13,13 +13,13 @@ let rec typeCheck utt =
   match utt with
   | Utt.Literal box ->
     (match box with
-    | BoxInt n -> IntType (Tt.IntLiteral n)
-    | BoxFloat f -> FloatType (Tt.FloatLiteral f))
-  | Utt.Term (l,r) ->
+    | Box.Int n -> IntType (Tt.IntLiteral n)
+    | Box.Float f -> FloatType (Tt.FloatLiteral f))
+  | Utt.BinOp (l,op,r) ->
     let ltree = typeCheck l in
     let rtree = typeCheck r in
       match ltree, rtree with
-      | IntType ltt, IntType rtt -> IntType (Tt.AddInt (ltt, rtt))
-      | FloatType ltt, FloatType rtt -> FloatType (Tt.AddFloat (ltt, rtt))
+      | IntType ltt, IntType rtt -> IntType (Tt.BinOpInt (ltt, op, rtt))
+      | FloatType ltt, FloatType rtt -> FloatType (Tt.BinOpFloat (ltt, op, rtt))
       | _, _-> raise (TypeMismatch "Addition operator's operands both should have type \'int\' or \'float\'") 
   

@@ -4,6 +4,6 @@
     Also, ppx-show is derived for pretty printing
 *)
 type t =
-  | BoxInt of int
-  | BoxFloat of float
+  | Int of int
+  | Float of float
   [@@deriving show]

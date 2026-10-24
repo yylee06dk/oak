@@ -1,4 +1,4 @@
 type t =
-  | BoxInt of int
-  | BoxFloat of float
+  | Int of int
+  | Float of float
   [@@deriving show]
