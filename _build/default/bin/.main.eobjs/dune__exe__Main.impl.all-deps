@@ -1,5 +1,0 @@
-dune__exe__Interpreter
-dune__exe__MyTypeCheck
-dune__exe__Parse
-dune__exe__TypedTree
-dune__exe__UntypedTree

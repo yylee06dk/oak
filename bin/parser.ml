@@ -1,6 +1,7 @@
 open Angstrom
 module Utt = UntypedTree
 
+
 let digits =
   take_while1 (function '0' .. '9' -> true | _ -> false)
 
@@ -8,11 +9,11 @@ let spaces =
   skip_while (function ' ' | '\n' | '\t' | '\r' -> true | _ -> false)
 
 let parse_int =
-  digits >>| fun s -> Utt.Valuen (int_of_string s)
+  digits >>| fun s -> Utt.Literal (Box.BoxInt (int_of_string s))
 
 let parse_float =
   consumed (digits *> char '.' *> digits)
-  >>| fun s -> Utt.Valuef (float_of_string s)
+  >>| fun s -> Utt.Literal (Box.BoxFloat (float_of_string s))
 
 let parse_literal =
   parse_float <|> parse_int
