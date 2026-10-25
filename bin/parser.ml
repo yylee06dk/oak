@@ -2,7 +2,7 @@ open Angstrom
 module Utt = UntypedTree
 module Op = Operator
 
-let debug_mode = false
+let debug_mode = true
 
 (* Debugging facilities *)
 let check_state label =
@@ -30,19 +30,25 @@ let parse_int =
 let parse_float =
   consumed (digits *> char '.' *> digits)
   >>| fun s -> Utt.Literal (Utt.Box.Float (float_of_string s))
+  
+let parse_bool =
+  string "true" <|> string "false"
+  >>| fun s -> Utt.Literal (Utt.Box.Bool (bool_of_string s))
 
 let parse_literal =
-  parse_float <|> parse_int
+  parse_float <|> parse_int <|> parse_bool
   
 let term_operator =
   spaces *> choice 
     [ char '+' *> return Op.Plus;
-      char '-' *> return Op.Minus ]
+      char '-' *> return Op.Minus;
+      string "or" *> return Op.Or; ]
 
 let factor_operator =
   spaces *> choice 
     [ char '*' *> return Op.Mult;
-      char '/' *> return Op.Div ]
+      char '/' *> return Op.Div;
+      string "and" *> return Op.Or; ]
     
 let chain_left operand operator =
   let chain =

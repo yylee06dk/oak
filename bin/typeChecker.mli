@@ -6,6 +6,7 @@ module Tt = TypedTree
 type t =
   | IntType of int Tt.t
   | FloatType of float Tt.t
+  | BoolType of bool Tt.t
   
 (** raised when type mismatch is found *)
 exception TypeMismatch of string

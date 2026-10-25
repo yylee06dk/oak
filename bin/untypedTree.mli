@@ -9,6 +9,7 @@ module Box : sig
   type t =
     | Int of int
     | Float of float
+    | Bool of bool
     [@@deriving show]
 end
 

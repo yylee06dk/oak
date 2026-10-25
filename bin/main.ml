@@ -23,6 +23,9 @@ let run_line line =
     | TC.FloatType tree -> 
       print_tt tree;
       Printf.printf "%g\n" (Interpreter.interp tree)
+    | TC.BoolType tree ->
+      print_tt tree;
+      Printf.printf "%B\n" (Interpreter.interp tree)
     | exception TC.TypeMismatch str ->
       print_endline str
     end
