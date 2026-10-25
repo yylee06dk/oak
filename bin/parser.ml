@@ -2,6 +2,21 @@ open Angstrom
 module Utt = UntypedTree
 module Op = Operator
 
+let debug_mode = false
+
+(* Debugging facilities *)
+let check_state label =
+  if debug_mode then 
+    pos >>= fun offset ->
+    available >>= fun remaining ->
+    peek_string (min 30 remaining) >>| fun upcoming ->
+    Printf.eprintf "[%s] offset=%d upcoming=%S\n%!"
+      label offset upcoming
+  else return ()
+
+let trace name p =
+  check_state ("enter " ^ name) *>
+  p <* check_state ("leave " ^ name)
 
 let digits =
   take_while1 (function '0' .. '9' -> true | _ -> false)
@@ -29,30 +44,26 @@ let factor_operator =
     [ char '*' *> return Op.Mult;
       char '/' *> return Op.Div ]
     
+let chain_left operand operator =
+  let chain =
+    many @@ lift2 Pair.make operator (spaces *> operand)
+  in
+  let build =
+    List.fold_left (fun left (op, right) -> Utt.BinOp (left, op, right)) 
+  in
+  operand >>= fun left ->
+  chain >>= fun rights ->
+  return @@ build left rights 
+  
+    
 let parse_expr =
   fix (fun expr ->
     let group = char '(' *> expr <* char ')' in
-    let atom = group <|> parse_literal in
+    let atom = trace "atom" @@ group <|> parse_literal in
     let factor = 
-      lift2 
-        (fun first rest ->
-        List.fold_left (fun tree (op, right) -> Utt.BinOp (tree, op, right)) first rest)
-        atom (* first *)
-        (many ( (* rest *)
-          Pair.make <$>
-          factor_operator <*>
-          (spaces *> atom)))
+      trace "factor" @@ chain_left atom factor_operator
     in
     let term =
-      lift2 
-        (* If this turns out to just be an atom, folding will happen 0 times and naturally get there
-           If it has more than one trailing [+ ATOM], it will be parsed then folded for left-recursiveness*)
-        (fun first rest ->
-        List.fold_left (fun tree (op, right) -> Utt.BinOp (tree, op, right)) first rest)
-        factor (* starting point - first *)
-        (many ( (* parse every optional [+ ATOM] to a tuple list - rest *)
-          (fun x y -> (x,y)) <$>
-          (spaces *> (string "+" <|> string "-") >>| Op.read) <*>
-          (spaces *> factor)))
+      trace "term" @@ chain_left factor term_operator
     in
     spaces *> term <* spaces)

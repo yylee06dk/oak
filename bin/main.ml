@@ -5,25 +5,23 @@ module TC = TypeChecker
 let tee f x = f x; x
 
 (* Debugging functions *)
-let printUtt utt =
-  print_endline "UTT:";
-  print_endline (Utt.show utt);
-  print_newline ()
-  
-let printTt tt =
-  print_endline "TT:";
-  print_endline (Tt.show tt);
-  print_newline ()
-  
+let print_tree label show tree =
+  Printf.printf "%s:\n%s\n\n" label (show tree)
+
+let print_utt =
+  print_tree "UTT" Utt.show
+let print_tt tree =
+  print_tree "TT" Tt.show tree
+
 let run_line line =
   match Angstrom.(parse_string ~consume:All Parser.parse_expr line) with
   | Result.Ok utt ->
-    begin match TC.typeCheck (tee printUtt utt) with
+    begin match TC.typeCheck (tee print_utt utt) with
     | TC.IntType tree ->
-      printTt tree;
+      print_tt tree;
       Printf.printf "%d\n" (Interpreter.interp tree)
     | TC.FloatType tree -> 
-      printTt tree;
+      print_tt tree;
       Printf.printf "%g\n" (Interpreter.interp tree)
     | exception TC.TypeMismatch str ->
       print_endline str
