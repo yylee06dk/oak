@@ -1,11 +1,12 @@
 module Op = Operator
+module OV = OakValues
+module OT = OakTypes
 
-type _ t =
-  | IntLiteral : int -> int t 
-  | BinOpInt : int t * Op.t * int t -> int t
-  | FloatLiteral : float -> float t
-  | BinOpFloat : float t * Op.t * float t -> float t
-  | BoolLiteral : bool -> bool t
-  | LogicOpBool : bool t * Op.t * bool t -> bool t
-
-val show : 'a t -> string
+type t =
+  | Literal of OV.t
+  | Identifier of string
+  | BinOpInt of t * Op.t * t
+  | BinOpFloat of t * Op.t * t
+  | BinOpBool of t * Op.t * t
+  | VarDeclCheck of string * t * t
+  [@@deriving show]

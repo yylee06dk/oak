@@ -1,6 +1,8 @@
 open Angstrom
 module Utt = UntypedTree
 module Op = Operator
+module OV = OakValues
+module OT = OakTypes
 
 let debug_mode = true
 
@@ -25,18 +27,41 @@ let spaces =
   skip_while (function ' ' | '\n' | '\t' | '\r' -> true | _ -> false)
 
 let parse_int =
-  digits >>| fun s -> Utt.Literal (Utt.Box.Int (int_of_string s))
+  digits >>| fun s -> Utt.Literal (OV.Int (int_of_string s))
 
 let parse_float =
   consumed (digits *> char '.' *> digits)
-  >>| fun s -> Utt.Literal (Utt.Box.Float (float_of_string s))
+  >>| fun s -> Utt.Literal (OV.Float (float_of_string s))
   
 let parse_bool =
   string "true" <|> string "false"
-  >>| fun s -> Utt.Literal (Utt.Box.Bool (bool_of_string s))
+  >>| fun s -> Utt.Literal (OV.Bool (bool_of_string s))
+  
+let parse_char =
+  char '\'' *> any_char <* char '\''
+  >>| fun c -> Utt.Literal (OV.Char c)
+  
+let parse_string =
+  char '\"' *>  
+  consumed (skip_while (fun c -> c != '\"'))
+  <* char '\"'
+  >>| fun s -> Utt.Literal (OV.String s)
+
+let parse_ident =
+  consumed (
+    any_char *> skip_while (function '0' .. '9' | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true | _ -> false)
+  ) >>| fun s -> Utt.Identifier s
 
 let parse_literal =
-  parse_float <|> parse_int <|> parse_bool
+  parse_float <|> parse_int <|> parse_bool <|> parse_ident <|> parse_string <|> parse_char
+  
+let parse_type =
+  spaces *> choice
+    [ string "Int" *> return OakTypes.Int;
+      string "Float" *> return OakTypes.Float;
+      string "Bool" *> return OakTypes.Bool;
+      string "Char" *> return OakTypes.Char;
+      string "String" *> return OakTypes.String; ]
   
 let term_operator =
   spaces *> choice 
@@ -65,7 +90,15 @@ let chain_left operand operator =
 let parse_expr =
   fix (fun expr ->
     let group = char '(' *> expr <* char ')' in
-    let atom = trace "atom" @@ group <|> parse_literal in
+    let var_decl =
+      trace "var_decl" @@ 
+      lift4 (fun name type_note value scope -> Utt.VarDecl (name, type_note, value, scope)) 
+        (trace "var_name" @@ string "let" *> spaces *> parse_ident <* spaces)
+        (trace "var_init" @@ char ':' *> spaces *> parse_type <* spaces)
+        (trace "var_scope" @@ char '=' *> expr <* string "in")
+        expr
+    in
+    let atom = trace "atom" @@ var_decl <|> group <|> parse_literal in
     let factor = 
       trace "factor" @@ chain_left atom factor_operator
     in

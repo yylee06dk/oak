@@ -10,25 +10,22 @@ let print_tree label show tree =
 
 let print_utt =
   print_tree "UTT" Utt.show
+
 let print_tt tree =
   print_tree "TT" Tt.show tree
 
 let run_line line =
   match Angstrom.(parse_string ~consume:All Parser.parse_expr line) with
   | Result.Ok utt ->
-    begin match TC.typeCheck (tee print_utt utt) with
-    | TC.IntType tree ->
+    TC.(match type_check (tee print_utt utt) TC.Context.empty with
+    | Check (res_type, tree) ->
       print_tt tree;
-      Printf.printf "%d\n" (Interpreter.interp tree)
-    | TC.FloatType tree -> 
-      print_tt tree;
-      Printf.printf "%g\n" (Interpreter.interp tree)
-    | TC.BoolType tree ->
-      print_tt tree;
-      Printf.printf "%B\n" (Interpreter.interp tree)
+      Printf.printf "%s\n" (OakValues.show @@ Interpreter.interp tree Interpreter.Env.empty)
     | exception TC.TypeMismatch str ->
       print_endline str
-    end
+    | exception Failure str ->
+      print_endline str
+    )
   | Result.Error str -> print_endline str
 
 
