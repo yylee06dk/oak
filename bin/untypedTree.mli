@@ -10,4 +10,5 @@ type t =
   | Identifier of string
   | BinOp of t * Op.t * t
   | VarDecl of t * OT.t * t * t
+  | AnonFunc of (t * OT.t) list * t
   [@@deriving show]

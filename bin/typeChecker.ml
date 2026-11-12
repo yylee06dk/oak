@@ -80,3 +80,18 @@ let rec type_check : Utt.t -> context -> t =
     let Check (scope_type, scope_tree) = type_check scope new_context in
     if init_type <> type_note then failwith "Given value different from annotated type"
     else Check (scope_type, Tt.VarDeclCheck (name_string, init_tree, scope_tree))
+  | AnonFunc (arg_list, body) ->
+    let name_type_list =
+      List.map (fun (n, tn) -> match n with | Identifier i -> (i, tn) | _ -> failwith "Expected Identifier") arg_list
+    in
+    let new_context =
+      List.fold_left (fun cur_context (n, tn) -> Context.add n tn cur_context)
+    in
+    let Check (body_type, body_tree) =
+      type_check body new_context
+    in
+    let func_type =
+      List.fold_right (fun left right -> OT.Arrow (left, right)) (List.map snd name_type_list) body_type
+    in
+    Check (func_type, Tt.AnonFuncCheck (List.map fst name_type_list, body_tree))
+    

@@ -19,4 +19,6 @@ let rec interp = fun tree env ->
     | Some x -> x
     | None -> failwith "Unbound variable"
     end
+  | Tt.AnonFuncCheck (arg_list, body) ->
+    
 

@@ -4,4 +4,5 @@ type t =
   | Bool
   | Char
   | String
+  | Arrow of t * t
   [@@deriving show]

@@ -3,7 +3,8 @@ module Tt = TypedTree
 module OT = OakTypes
 
 (** represents what the expression(AST) should interpret to.
-    Also, carries information about the resulting type checked tree's type *)
+    Also, carries information about the resulting type checked tree's type 
+    Uses Oaktypes to have a uniform interface of types in the codebase *)
 type t = 
   | Check of OT.t * Tt.t
   [@@deriving show]

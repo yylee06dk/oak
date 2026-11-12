@@ -9,4 +9,5 @@ type t =
   | BinOpFloat of t * Op.t * t
   | BinOpBool of t * Op.t * t
   | VarDeclCheck of string * t * t
+  | AnonFuncCheck of string list * t
   [@@deriving show]

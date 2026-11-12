@@ -55,13 +55,30 @@ let parse_ident =
 let parse_literal =
   parse_float <|> parse_int <|> parse_bool <|> parse_ident <|> parse_string <|> parse_char
   
-let parse_type =
+let parse_singleton_type =
   spaces *> choice
     [ string "Int" *> return OakTypes.Int;
       string "Float" *> return OakTypes.Float;
       string "Bool" *> return OakTypes.Bool;
       string "Char" *> return OakTypes.Char;
       string "String" *> return OakTypes.String; ]
+  
+let parse_type =
+  fix (fun typ ->
+    let group_type =
+      char '(' *> spaces *> typ <* spaces <* char ')'
+    in
+    let atom =
+      group_type <|> parse_singleton_type
+    in
+    let arrow_type =
+      lift2 (fun l r -> OT.Arrow (l, r))
+      (atom <* spaces <* string "->" <* spaces)
+      typ
+      <|> atom
+    in
+    spaces *> arrow_type <* spaces
+  )
   
 let term_operator =
   spaces *> choice 
@@ -105,4 +122,16 @@ let parse_expr =
     let term =
       trace "term" @@ chain_left factor term_operator
     in
-    spaces *> term <* spaces)
+    let func =
+      let single_arg =
+        lift2 Pair.make
+        (spaces *> char '(' *> parse_ident <* spaces)
+        (char ':' *> spaces *> parse_type <* spaces <* char ')')
+      in
+      trace "func" @@
+        lift2 (fun arg_list body -> Utt.AnonFunc (arg_list, body))
+        (string "fun" *> many single_arg <* spaces)
+        (string "->" *> expr)
+      <|> term
+    in
+    spaces *> func <* spaces)
