@@ -20,3 +20,11 @@ let rec interp = fun tree env ->
     | None -> failwith "Unbound variable"
     end
   | Tt.AnonFuncCheck (arg_string, body) -> OV.Closure (arg_string, body, env)
+  | Tt.AppCheck (func, param) ->
+    begin match interp func env with
+    | OV.Closure (name, body_tree, capture_env) ->
+      let param_val = interp param env in
+      let new_env = Env.add name param_val capture_env in
+      interp body_tree new_env
+    | _ -> raise InternalTCErr
+    end

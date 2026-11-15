@@ -97,4 +97,18 @@ let rec type_check : Utt.t -> context -> t =
       OT.Arrow (arg_type, body_type)
     in
     Check (func_type, Tt.AnonFuncCheck (arg_name, body_tree))
-    
+  | App (f, param) ->
+    let Check (func_type, func_tree) =
+      type_check f context
+    in
+    let Check (param_type, param_tree) =
+      type_check param context
+    in
+    let res_type =
+      match func_type with
+      | OT.Arrow (src, dest) -> 
+        if src == param_type then dest
+        else raise (TypeMismatch "Function type mismatch")
+      | _ -> raise @@ TypeMismatch "Uncallable function given"
+    in
+    Check (res_type, Tt.AppCheck (func_tree, param_tree))

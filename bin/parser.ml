@@ -48,12 +48,19 @@ let parse_string =
   >>| fun s -> Utt.Literal (OV.String s)
 
 let parse_ident =
+  let ident_start = function 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false in
+  let ident_continue = function 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true |_ -> false in
+
   consumed (
-    any_char *> skip_while (function '0' .. '9' | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true | _ -> false)
-  ) >>| fun s -> Utt.Identifier s
+    satisfy ident_start *> skip_while ident_continue
+  ) >>= fun name ->
+    match name with
+    | "let" | "fun" | "in" | "true" | "false" | "and" | "or"
+    -> fail ""
+    | _ -> return @@ Utt.Identifier name
 
 let parse_literal =
-  parse_float <|> parse_int <|> parse_bool <|> parse_ident <|> parse_string <|> parse_char
+  trace "literal" @@ parse_float <|> parse_int <|> parse_bool <|> parse_ident <|> parse_string <|> parse_char
   
 let parse_singleton_type =
   spaces *> choice
@@ -111,9 +118,9 @@ let parse_expr =
       trace "var_decl" @@ 
       lift4 (fun name type_note value scope -> Utt.VarDecl (name, type_note, value, scope)) 
         (trace "var_name" @@ string "let" *> spaces *> parse_ident <* spaces)
-        (trace "var_init" @@ char ':' *> spaces *> parse_type <* spaces)
-        (trace "var_scope" @@ char '=' *> expr <* string "in")
-        expr
+        (trace "var_type" @@ char ':' *> spaces *> parse_type <* spaces)
+        (trace "var_init" @@ char '=' *> expr <* string "in")
+        (trace "var_scope" @@ expr)
     in
     let atom = trace "atom" @@ var_decl <|> group <|> parse_literal in
     let factor = 
@@ -134,4 +141,11 @@ let parse_expr =
         (string "->" *> expr)
       <|> term
     in
-    spaces *> func <* spaces)
+    let app =
+      trace "app" @@
+        lift2 (fun f param -> Utt.App (f, param))
+        (spaces *> func)
+        (spaces *> func)
+      <|> func
+    in
+    spaces *> app <* spaces)

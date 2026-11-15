@@ -8,4 +8,5 @@ type t =
   | BinOp of t * Op.t * t
   | VarDecl of t * OT.t * t * t
   | AnonFunc of (t * OT.t) * t
+  | App of t * t
   [@@deriving show]

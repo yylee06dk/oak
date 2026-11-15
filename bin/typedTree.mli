@@ -10,4 +10,5 @@ type t = OakValues.typed_tree =
   | BinOpBool of t * Op.t * t
   | VarDeclCheck of string * t * t
   | AnonFuncCheck of string * t
+  | AppCheck of t * t
   [@@deriving show]

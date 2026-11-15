@@ -26,6 +26,7 @@ and typed_tree =
   | BinOpBool of typed_tree * Op.t * typed_tree
   | VarDeclCheck of string * typed_tree * typed_tree
   | AnonFuncCheck of string * typed_tree
+  | AppCheck of typed_tree * typed_tree
   [@@deriving show]
 
   
