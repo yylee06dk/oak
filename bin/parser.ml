@@ -129,8 +129,8 @@ let parse_expr =
         (char ':' *> spaces *> parse_type <* spaces <* char ')')
       in
       trace "func" @@
-        lift2 (fun arg_list body -> Utt.AnonFunc (arg_list, body))
-        (string "fun" *> many single_arg <* spaces)
+        lift2 (fun arg body -> Utt.AnonFunc (arg, body))
+        (string "fun" *> single_arg <* spaces)
         (string "->" *> expr)
       <|> term
     in

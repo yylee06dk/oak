@@ -45,7 +45,8 @@ let rec type_check : Utt.t -> context -> t =
     | Float n -> Check (OT.Float, Tt.Literal v)
     | Bool n -> Check (OT.Bool, Tt.Literal v)
     | Char n -> Check (OT.Char, Tt.Literal v)
-    | String n -> Check (OT.String, Tt.Literal v))
+    | String n -> Check (OT.String, Tt.Literal v)
+    | Closure (_,_,_) -> assert false)
   | Identifier i ->
     let type_found = match Context.find_opt i context with
       | Some x -> x
@@ -80,18 +81,20 @@ let rec type_check : Utt.t -> context -> t =
     let Check (scope_type, scope_tree) = type_check scope new_context in
     if init_type <> type_note then failwith "Given value different from annotated type"
     else Check (scope_type, Tt.VarDeclCheck (name_string, init_tree, scope_tree))
-  | AnonFunc (arg_list, body) ->
-    let name_type_list =
-      List.map (fun (n, tn) -> match n with | Identifier i -> (i, tn) | _ -> failwith "Expected Identifier") arg_list
+  | AnonFunc (arg, body) ->
+    let (arg_name, arg_type) =
+      match fst arg with
+      | Identifier i -> (i, snd arg)
+      | _ -> failwith "Expected Identifier"
     in
     let new_context =
-      List.fold_left (fun cur_context (n, tn) -> Context.add n tn cur_context)
+      Context.add arg_name arg_type context
     in
     let Check (body_type, body_tree) =
       type_check body new_context
     in
     let func_type =
-      List.fold_right (fun left right -> OT.Arrow (left, right)) (List.map snd name_type_list) body_type
+      OT.Arrow (arg_type, body_type)
     in
-    Check (func_type, Tt.AnonFuncCheck (List.map fst name_type_list, body_tree))
+    Check (func_type, Tt.AnonFuncCheck (arg_name, body_tree))
     

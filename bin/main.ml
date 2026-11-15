@@ -19,6 +19,7 @@ let run_line line =
   | Result.Ok utt ->
     TC.(match type_check (tee print_utt utt) TC.Context.empty with
     | Check (res_type, tree) ->
+      print_endline (OT.show res_type);
       print_tt tree;
       Printf.printf "%s\n" (OakValues.show @@ Interpreter.interp tree Interpreter.Env.empty)
     | exception TC.TypeMismatch str ->
