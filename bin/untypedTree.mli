@@ -12,4 +12,7 @@ type t =
   | VarDecl of t * OT.t * t * t
   | AnonFunc of (t * OT.t) * t
   | App of t * t
-  [@@deriving show]
+
+val pp : Format.formatter -> t -> unit
+
+val show : t -> string

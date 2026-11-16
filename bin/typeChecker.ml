@@ -34,7 +34,6 @@ let generate_type_mismatch op =
   in
   TypeMismatch errmsg
 
-
 (* Traverses the tree to check type correctness *)
 let rec type_check : Utt.t -> context -> t =
   fun utt context -> let open Utt in
@@ -79,7 +78,11 @@ let rec type_check : Utt.t -> context -> t =
     in
     let Check (init_type, init_tree) = type_check init_val context in
     let Check (scope_type, scope_tree) = type_check scope new_context in
-    if init_type <> type_note then failwith "Given value different from annotated type"
+    if init_type <> type_note then failwith 
+      ("Given value different from annotated type: " 
+      ^ OT.show init_type ^ " / "
+      ^ OT.show type_note ^ " / "
+      ^ Tt.show init_tree)
     else Check (scope_type, Tt.VarDeclCheck (name_string, init_tree, scope_tree))
   | AnonFunc (arg, body) ->
     let (arg_name, arg_type) =

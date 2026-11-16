@@ -11,4 +11,7 @@ type t = OakValues.typed_tree =
   | VarDeclCheck of string * t * t
   | AnonFuncCheck of string * t
   | AppCheck of t * t
-  [@@deriving show]
+
+val pp : Format.formatter -> t -> unit
+
+val show : t -> string

@@ -27,7 +27,7 @@ and typed_tree =
   | VarDeclCheck of string * typed_tree * typed_tree
   | AnonFuncCheck of string * typed_tree
   | AppCheck of typed_tree * typed_tree
-  [@@deriving show]
+  [@@deriving show {with_path = false}]
 
   
 let do_binOp op left right =
