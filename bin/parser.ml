@@ -135,9 +135,17 @@ let parse_expr =
         (spaces *> char '(' *> parse_ident <* spaces)
         (char ':' *> spaces *> parse_type <* spaces <* char ')')
       in
+      let build_func arg_chain body =
+        let starter = arg_chain |> List.rev |> List.hd
+        and leftover = arg_chain |> List.rev |> List.tl |> List.rev in
+        
+        List.fold_right (fun arg_pair func -> Utt.AnonFunc (arg_pair, func))
+          leftover (Utt.AnonFunc (starter, body)) 
+      in
+      
       trace "func" @@
-        lift2 (fun arg body -> Utt.AnonFunc (arg, body))
-        (string "fun" *> single_arg <* spaces)
+        lift2 build_func
+        (string "fun" *> many1 single_arg <* spaces)
         (string "->" *> expr)
       <|> term
     in
