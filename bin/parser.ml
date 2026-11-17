@@ -4,7 +4,7 @@ module Op = Operator
 module OV = OakValues
 module OT = OakTypes
 
-let debug_mode = true
+let debug_mode = false
 
 (* Debugging facilities *)
 let check_state label =
@@ -150,10 +150,14 @@ let parse_expr =
       <|> term
     in
     let app =
+      let build_appchain func params = 
+        List.fold_left (fun f param -> Utt.App (f, param))
+          func params
+      in
       trace "app" @@
-        lift2 (fun f param -> Utt.App (f, param))
+        lift2 (fun f params -> build_appchain f params)
         (spaces *> func)
-        (spaces *> func)
+        (many @@ (spaces *> func))
       <|> func
     in
     spaces *> app <* spaces)
