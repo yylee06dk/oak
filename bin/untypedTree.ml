@@ -9,6 +9,7 @@ type t =
   | VarDecl of t * OT.t * t * t
   | AnonFunc of (t * OT.t) * t
   | App of t * t
+  | If of t * t * t
 
 let rec pp fmt tree =
   match tree with
@@ -26,6 +27,9 @@ let rec pp fmt tree =
   | App (func, param) ->
     Format.fprintf fmt "@[<hov 2>App(%a@ %a)@]"
       pp func pp param
+  | If (cond, tb, fb) ->
+    Format.fprintf fmt "@[<hov 2>If(%a)@ then (%a)@ else (%a)@]"
+      pp cond pp tb pp fb
   
 let show tree =
   Format.asprintf "%a" pp tree

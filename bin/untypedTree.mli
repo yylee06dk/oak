@@ -12,6 +12,7 @@ type t =
   | VarDecl of t * OT.t * t * t
   | AnonFunc of (t * OT.t) * t
   | App of t * t
+  | If of t * t * t
 
 val pp : Format.formatter -> t -> unit
 

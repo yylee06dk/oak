@@ -110,8 +110,23 @@ let rec type_check : Utt.t -> context -> t =
     let res_type =
       match func_type with
       | OT.Arrow (src, dest) -> 
-        if src == param_type then dest
+        if src = param_type then dest
         else raise (TypeMismatch "Function type mismatch")
       | _ -> raise @@ TypeMismatch "Uncallable function given"
     in
     Check (res_type, Tt.AppCheck (func_tree, param_tree))
+  | If (cond, tb, fb) ->
+    let Check (cond_type, cond_tree) =
+      type_check cond context
+    in
+    let Check (tb_type, tb_tree) =
+      type_check tb context
+    in
+    let Check (fb_type, fb_tree) =
+      type_check fb context
+    in
+
+    if cond_type <> OT.Bool then raise @@ TypeMismatch "If should have boolean typed condition"
+    else
+      if tb_type <> fb_type then raise @@ TypeMismatch "If's both branch should have same type"
+      else Check (tb_type, IfCheck (cond_tree, tb_tree, fb_tree))

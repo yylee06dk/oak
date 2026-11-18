@@ -55,7 +55,7 @@ let parse_ident =
     satisfy ident_start *> skip_while ident_continue
   ) >>= fun name ->
     match name with
-    | "let" | "fun" | "in" | "true" | "false" | "and" | "or"
+    | "let" | "fun" | "in" | "true" | "false" | "and" | "or" | "if" | "then" | "else"
     -> fail ""
     | _ -> return @@ Utt.Identifier name
 
@@ -160,4 +160,12 @@ let parse_expr =
         (many @@ (spaces *> func))
       <|> func
     in
-    spaces *> app <* spaces)
+    let if_ =
+      trace "if" @@
+        lift3 (fun cond t f -> Utt.If (cond, t, f))
+        (string "if" *> spaces *> expr)
+        (string "then" *> spaces *> expr)
+        (string "else" *> spaces *> expr)
+      <|> app
+    in
+    spaces *> if_ <* spaces)

@@ -11,6 +11,7 @@ type t = OakValues.typed_tree =
   | VarDeclCheck of string * t * t
   | AnonFuncCheck of string * t
   | AppCheck of t * t
+  | IfCheck of t * t * t
 
 let rec pp fmt tree =
   match tree with
@@ -30,6 +31,9 @@ let rec pp fmt tree =
   | AppCheck (func, param) ->
     Format.fprintf fmt "@[<hov 2>App(%a@ %a)@]"
       pp func pp param
+  | IfCheck (cond, tb, fb) ->
+    Format.fprintf fmt "@[<hov 2>If(%a)@ then (%a)@ else (%a)@]"
+      pp cond pp tb pp fb
 
 let show tree =
   Format.asprintf "%a" pp tree

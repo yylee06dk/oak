@@ -28,3 +28,9 @@ let rec interp = fun tree env ->
       interp body_tree new_env
     | _ -> raise InternalTCErr
     end
+  | Tt.IfCheck (cond, tb, fb) ->
+    begin match interp cond env with
+    | OV.Bool true -> interp tb env
+    | OV.Bool false -> interp fb env
+    | _ -> raise InternalTCErr
+    end
