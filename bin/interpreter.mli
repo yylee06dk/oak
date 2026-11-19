@@ -4,4 +4,4 @@ module Env : Map.S with type key = string
 exception InternalTCErr
 
 (** given a typed tree, interprets it by walking the tree *)
-val interp : TypedTree.t -> OakValues.t Env.t -> OakValues.t
+val interp : TypedTree.t -> OakValues.t Env.t ref -> OakValues.t

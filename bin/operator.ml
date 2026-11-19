@@ -1,5 +1,5 @@
 (*
-  Arithmetic operators.
+  Arithmetic, logical, and comparison operators.
   Lives in a separate module since operators are used all around the code
 *)
 type t = 
@@ -9,6 +9,12 @@ type t =
   | Div
   | And
   | Or
+  | Eq
+  | Neq
+  | Great
+  | Geq
+  | Less
+  | Leq
   [@@deriving show { with_path = false }] 
   
 exception UnknownOperator of string

@@ -9,6 +9,7 @@ type t = OakValues.typed_tree =
   | BinOpFloat of t * Op.t * t
   | BinOpBool of t * Op.t * t
   | VarDeclCheck of string * t * t
+  | RecFuncCheck of string * string * t * t
   | AnonFuncCheck of string * t
   | AppCheck of t * t
   | IfCheck of t * t * t

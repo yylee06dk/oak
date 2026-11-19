@@ -3,7 +3,18 @@ module Utt = UntypedTree
 module Tt = TypedTree
 module OV = OakValues
 module OT = OakTypes
-module Context = Map.Make(String)
+module Context = struct
+  include Map.Make(String)
+  let pp pp_value fmt env =
+    Format.fprintf fmt "Context:{@[<hov>";
+    iter (fun key value ->
+      Format.fprintf fmt "@ %s = %a;" key pp_value value)
+      env;
+    Format.fprintf fmt "@] }"
+    
+  let show ctxt =
+    Format.asprintf "%a" (pp OT.pp) ctxt
+end
 
 type t = 
   | Check of OT.t * Tt.t
@@ -23,6 +34,13 @@ let operator_types =
 
     (Op.And, ["bool"]);
     (Op.Or, ["bool"]);
+
+    (Op.Eq, ["int"; "float"; "bool"; "char"; "string"]);
+    (Op.Neq, ["int"; "float"; "bool"; "char"; "string"]);
+    (Op.Great, ["int"; "float"; "char"; "string"]);
+    (Op.Geq, ["int"; "float"; "char"; "string"]);
+    (Op.Less, ["int"; "float"; "char"; "string"]);
+    (Op.Leq, ["int"; "float"; "char"; "string"]);
   ]
 
 let generate_type_mismatch op =
@@ -49,7 +67,7 @@ let rec type_check : Utt.t -> context -> t =
   | Identifier i ->
     let type_found = match Context.find_opt i context with
       | Some x -> x
-      | None -> failwith "Unbounded variable"
+      | None -> failwith @@ "Unbounded variable: " ^ i ^ " in " ^ Context.show context
     in  
     Check (type_found, Tt.Identifier i)
   | BinOp (l,op,r) ->
@@ -68,6 +86,25 @@ let rec type_check : Utt.t -> context -> t =
         | OT.Float, OT.Float -> Check (OT.Float, Tt.BinOpFloat (ltree, op, rtree))
         | _, _-> 
           raise @@ generate_type_mismatch op)
+    | Op.Eq | Op.Neq ->
+      (match ltype, rtype with
+        | OT.Int, OT.Int
+        | OT.Float, OT.Float
+        | OT.Bool, OT.Bool
+        | OT.Char, OT.Char
+        | OT.String, OT.String ->
+          Check (OT.Bool, Tt.BinOpBool (ltree, op, rtree))
+        | _, _ ->
+          raise @@ generate_type_mismatch op)
+    | Op.Great | Op.Geq | Op.Less | Op.Leq ->
+      (match ltype, rtype with
+        | OT.Int, OT.Int
+        | OT.Float, OT.Float
+        | OT.Char, OT.Char
+        | OT.String, OT.String ->
+          Check (OT.Bool, Tt.BinOpBool (ltree, op, rtree))
+        | _, _ ->
+          raise @@ generate_type_mismatch op)
     end
   | VarDecl (name, type_note, init_val, scope) ->
     let name_string = 
@@ -84,11 +121,33 @@ let rec type_check : Utt.t -> context -> t =
       ^ OT.show type_note ^ " / "
       ^ Tt.show init_tree)
     else Check (scope_type, Tt.VarDeclCheck (name_string, init_tree, scope_tree))
+  | RecFunc (name, (arg, arg_type), dest_type, body, scope) ->
+    let (name_str, arg_name) =
+      match name, arg with
+      | Identifier i, Identifier a -> (i,a)
+      | _ -> failwith "Expected Identifier in rec fun"
+    in
+    let func_type = OT.Arrow (arg_type, dest_type) in
+    let scope_context =
+      Context.add name_str func_type context
+    in
+    let body_context =
+      Context.add arg_name arg_type scope_context
+    in
+    let Check (body_type, body_tree) =
+      type_check body body_context
+    in
+    let Check (scope_type, scope_tree) =
+      type_check scope scope_context
+    in
+    if body_type <> dest_type then raise @@ TypeMismatch "rec fun's type annotation doesn't match the actual type."
+    else Check (scope_type , Tt.RecFuncCheck (name_str, arg_name, body_tree, scope_tree))
+
   | AnonFunc (arg, body) ->
     let (arg_name, arg_type) =
       match fst arg with
       | Identifier i -> (i, snd arg)
-      | _ -> failwith "Expected Identifier"
+      | _ -> failwith "Expected Identifier in anon fun"
     in
     let new_context =
       Context.add arg_name arg_type context

@@ -4,7 +4,7 @@ module Op = Operator
 module OV = OakValues
 module OT = OakTypes
 
-let debug_mode = false
+let debug_mode = true
 
 (* Debugging facilities *)
 let check_state label =
@@ -87,17 +87,32 @@ let parse_type =
     spaces *> arrow_type <* spaces
   )
   
+let arg_pair =
+  lift2 Pair.make
+  (spaces *> char '(' *> parse_ident <* spaces)
+  (char ':' *> spaces *> parse_type <* spaces <* char ')')
+
 let term_operator =
   spaces *> choice 
     [ char '+' *> return Op.Plus;
-      char '-' *> return Op.Minus;
-      string "or" *> return Op.Or; ]
+      char '-' *> return Op.Minus; ]
 
 let factor_operator =
   spaces *> choice 
     [ char '*' *> return Op.Mult;
-      char '/' *> return Op.Div;
-      string "and" *> return Op.And; ]
+      char '/' *> return Op.Div; ]
+
+let equality_operator =
+  spaces *> choice 
+    [ string "==" *> return Op.Eq;
+      string "!=" *> return Op.Neq; ]
+
+let comparison_operator =
+  spaces *> choice 
+    [ string "<=" *> return Op.Leq;
+      char '<' *> return Op.Less;
+      string ">=" *> return Op.Geq;
+      char '>' *> return Op.Great; ]
     
 let chain_left operand operator =
   let chain =
@@ -123,7 +138,7 @@ let parse_expr =
       trace "app" @@
         lift2 (fun f params -> build_appchain f params)
         (spaces *> atom)
-        (many @@ (spaces *> atom))
+        (many1 @@ (spaces *> atom))
       <|> atom
     in
     let factor = 
@@ -132,6 +147,28 @@ let parse_expr =
     let term =
       trace "term" @@ chain_left factor term_operator
     in
+    let logic_and =
+      trace "and" @@ chain_left term (spaces *> string "and" *> return Op.And)
+    in
+    let logic_or =
+      trace "or" @@ chain_left logic_and (spaces *> string "or" *> return Op.Or)
+    in
+    let comparison =
+      trace "comp" @@
+        lift3 (fun left op right -> Utt.BinOp (left, op, right))
+        (spaces *> logic_or)
+        comparison_operator
+        (spaces *> logic_or)
+      <|> spaces *> logic_or
+    in
+    let equality =
+      trace "eq" @@
+      lift3 (fun left op right -> Utt.BinOp (left, op, right))
+        (spaces *> comparison)
+        equality_operator
+        (spaces *> comparison)
+      <|> spaces *> comparison
+    in
     let let_expr =
       trace "let_expr" @@ 
       lift4 (fun name type_note value scope -> Utt.VarDecl (name, type_note, value, scope)) 
@@ -139,14 +176,17 @@ let parse_expr =
         (char ':' *> spaces *> parse_type <* spaces)
         (char '=' *> expr <* string "in")
         (expr)
+      <|>
+      (lift4 (fun name arg_name arg_typ dest_typ body scope -> Utt.RecFunc (name, (arg_name, arg_typ), dest_typ, body, scope))
+        (string "let rec" *> spaces *> parse_ident)
+        (spaces *> char '(' *> parse_ident)
+        (spaces *> char ':' *> spaces *> parse_type <* spaces <* char ')')
+        (spaces *> char ':' *> spaces *> parse_type)
+        <*> (spaces *> char '=' *> expr)
+        <*> (spaces *> string "in" *> expr))
     in
     let fun_expr =
       (* Chaining process - can it be abstracted? *)
-      let single_arg =
-        lift2 Pair.make
-        (spaces *> char '(' *> parse_ident <* spaces)
-        (char ':' *> spaces *> parse_type <* spaces <* char ')')
-      in
       let build_func arg_chain body =
         let starter = arg_chain |> List.rev |> List.hd
         and leftover = arg_chain |> List.rev |> List.tl |> List.rev in
@@ -157,7 +197,7 @@ let parse_expr =
       
       trace "func" @@
         lift2 build_func
-        (string "fun" *> many1 single_arg <* spaces)
+        (string "fun" *> many1 arg_pair <* spaces)
         (string "->" *> expr)
     in
     let if_expr =
@@ -167,5 +207,5 @@ let parse_expr =
         (string "then" *> spaces *> expr)
         (string "else" *> spaces *> expr)
     in
-    let entry_point = let_expr <|> fun_expr <|> if_expr <|> term in
+    let entry_point = let_expr <|> fun_expr <|> if_expr <|> equality in
     spaces *> entry_point <* spaces)

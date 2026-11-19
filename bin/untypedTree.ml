@@ -7,6 +7,7 @@ type t =
   | Identifier of string
   | BinOp of t * Op.t * t
   | VarDecl of t * OT.t * t * t
+  | RecFunc of t * (t * OT.t) * OT.t * t * t
   | AnonFunc of (t * OT.t) * t
   | App of t * t
   | If of t * t * t
@@ -21,6 +22,9 @@ let rec pp fmt tree =
   | VarDecl (name, typ, init, scope) ->
     Format.fprintf fmt "@[<hov 2>Var(%a: %a =@ %a@ in@ %a)@]"
       pp name OT.pp typ pp init pp scope
+  | RecFunc (name, (arg, arg_typ), dest_typ, body, scope) ->
+    Format.fprintf fmt "@[<hov 2>RecFun(%a@ (%a:%a):%a@ =@ %a in@ %a)@]"
+      pp name pp arg OT.pp arg_typ OT.pp dest_typ pp body pp scope
   | AnonFunc ((arg, arg_typ), body) ->
     Format.fprintf fmt "@[<hov 2>Fun(%a: %a ->@ %a)@]"
       pp arg OT.pp arg_typ pp body

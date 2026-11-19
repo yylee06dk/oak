@@ -21,7 +21,7 @@ let run_line line =
     | Check (res_type, tree) ->
       print_endline (OT.show res_type);
       print_tt tree;
-      Printf.printf "%s\n" (OakValues.show @@ Interpreter.interp tree Interpreter.Env.empty)
+      Printf.printf "%s\n" (OakValues.show @@ Interpreter.interp tree (ref Interpreter.Env.empty))
     | exception TC.TypeMismatch str ->
       print_endline str
     | exception Failure str ->

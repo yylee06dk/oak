@@ -2,7 +2,7 @@ module Op = Operator
 module Env = struct
   include Map.Make(String)
   let pp pp_value fmt env =
-    Format.fprintf fmt "{@[<hov>";
+    Format.fprintf fmt "Env:{@[<hov>";
     iter (fun key value ->
       Format.fprintf fmt "@ %s = %a;" key pp_value value)
       env;
@@ -16,7 +16,7 @@ type t =
   | Bool of bool
   | Char of char
   | String of string
-  | Closure of string * typed_tree * (t Env.t)
+  | Closure of string * typed_tree * ((t Env.t) ref)
 
 and typed_tree =
   | Literal of t
@@ -25,6 +25,7 @@ and typed_tree =
   | BinOpFloat of typed_tree * Op.t * typed_tree
   | BinOpBool of typed_tree * Op.t * typed_tree
   | VarDeclCheck of string * typed_tree * typed_tree
+  | RecFuncCheck of string * string * typed_tree * typed_tree
   | AnonFuncCheck of string * typed_tree
   | AppCheck of typed_tree * typed_tree
   | IfCheck of typed_tree * typed_tree * typed_tree
@@ -54,4 +55,42 @@ let do_binOp op left right =
     | _, _ -> failwith "InternalError")
   | Op.Or -> (match left, right with
     | Bool l, Bool r -> Bool (l || r)
+    | _, _ -> failwith "InternalError")
+  | Op.Eq -> (match left, right with
+    | Int l, Int r -> Bool (l = r)
+    | Float l, Float r -> Bool (l = r)
+    | Bool l, Bool r -> Bool (l = r)
+    | Char l, Char r -> Bool (l = r)
+    | String l, String r -> Bool (l = r)
+    | _, _ -> failwith "InternalError")
+  | Op.Neq -> (match left, right with
+    | Int l, Int r -> Bool (l <> r)
+    | Float l, Float r -> Bool (l <> r)
+    | Bool l, Bool r -> Bool (l <> r)
+    | Char l, Char r -> Bool (l <> r)
+    | String l, String r -> Bool (l <> r)
+    | _, _ -> failwith "InternalError")
+  | Op.Great -> (match left, right with
+    | Int l, Int r -> Bool (l > r)
+    | Float l, Float r -> Bool (l > r)
+    | Char l, Char r -> Bool (l > r)
+    | String l, String r -> Bool (l > r)
+    | _, _ -> failwith "InternalError")
+  | Op.Geq -> (match left, right with
+    | Int l, Int r -> Bool (l >= r)
+    | Float l, Float r -> Bool (l >= r)
+    | Char l, Char r -> Bool (l >= r)
+    | String l, String r -> Bool (l >= r)
+    | _, _ -> failwith "InternalError")
+  | Op.Less -> (match left, right with
+    | Int l, Int r -> Bool (l < r)
+    | Float l, Float r -> Bool (l < r)
+    | Char l, Char r -> Bool (l < r)
+    | String l, String r -> Bool (l < r)
+    | _, _ -> failwith "InternalError")
+  | Op.Leq -> (match left, right with
+    | Int l, Int r -> Bool (l <= r)
+    | Float l, Float r -> Bool (l <= r)
+    | Char l, Char r -> Bool (l <= r)
+    | String l, String r -> Bool (l <= r)
     | _, _ -> failwith "InternalError")

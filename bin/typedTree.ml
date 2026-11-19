@@ -9,6 +9,7 @@ type t = OakValues.typed_tree =
   | BinOpFloat of t * Op.t * t
   | BinOpBool of t * Op.t * t
   | VarDeclCheck of string * t * t
+  | RecFuncCheck of string * string * t * t
   | AnonFuncCheck of string * t
   | AppCheck of t * t
   | IfCheck of t * t * t
@@ -25,6 +26,9 @@ let rec pp fmt tree =
   | VarDeclCheck (name, init, scope) ->
     Format.fprintf fmt "@[<hov 2>Var(%s =@ %a@ in@ %a)@]"
       name pp init pp scope
+  | RecFuncCheck (name, arg_name, body, scope) ->
+    Format.fprintf fmt "@[<hov 2>RecFun(%s: %s ->@ %a@ in@ %a)@]"
+      name arg_name pp body pp scope
   | AnonFuncCheck (arg, body) ->
     Format.fprintf fmt "@[<hov 2>Fun(%s ->@ %a)@]"
       arg pp body
