@@ -61,7 +61,7 @@ let parse_ident =
 
 let parse_literal =
   trace "literal" @@ parse_float <|> parse_int <|> parse_bool <|> parse_ident <|> parse_string <|> parse_char
-  
+
 let parse_singleton_type =
   spaces *> choice
     [ string "Int" *> return OakTypes.Int;
@@ -97,7 +97,7 @@ let factor_operator =
   spaces *> choice 
     [ char '*' *> return Op.Mult;
       char '/' *> return Op.Div;
-      string "and" *> return Op.Or; ]
+      string "and" *> return Op.And; ]
     
 let chain_left operand operator =
   let chain =
@@ -114,22 +114,34 @@ let chain_left operand operator =
 let parse_expr =
   fix (fun expr ->
     let group = char '(' *> expr <* char ')' in
-    let var_decl =
-      trace "var_decl" @@ 
-      lift4 (fun name type_note value scope -> Utt.VarDecl (name, type_note, value, scope)) 
-        (trace "var_name" @@ string "let" *> spaces *> parse_ident <* spaces)
-        (trace "var_type" @@ char ':' *> spaces *> parse_type <* spaces)
-        (trace "var_init" @@ char '=' *> expr <* string "in")
-        (trace "var_scope" @@ expr)
+    let atom = trace "atom" @@ group <|> parse_literal in
+    let app =
+      let build_appchain func params = 
+        List.fold_left (fun f param -> Utt.App (f, param))
+          func params
+      in
+      trace "app" @@
+        lift2 (fun f params -> build_appchain f params)
+        (spaces *> atom)
+        (many @@ (spaces *> atom))
+      <|> atom
     in
-    let atom = trace "atom" @@ var_decl <|> group <|> parse_literal in
     let factor = 
-      trace "factor" @@ chain_left atom factor_operator
+      trace "factor" @@ chain_left app factor_operator
     in
     let term =
       trace "term" @@ chain_left factor term_operator
     in
-    let func =
+    let let_expr =
+      trace "let_expr" @@ 
+      lift4 (fun name type_note value scope -> Utt.VarDecl (name, type_note, value, scope)) 
+        (string "let" *> spaces *> parse_ident <* spaces)
+        (char ':' *> spaces *> parse_type <* spaces)
+        (char '=' *> expr <* string "in")
+        (expr)
+    in
+    let fun_expr =
+      (* Chaining process - can it be abstracted? *)
       let single_arg =
         lift2 Pair.make
         (spaces *> char '(' *> parse_ident <* spaces)
@@ -147,25 +159,13 @@ let parse_expr =
         lift2 build_func
         (string "fun" *> many1 single_arg <* spaces)
         (string "->" *> expr)
-      <|> term
     in
-    let app =
-      let build_appchain func params = 
-        List.fold_left (fun f param -> Utt.App (f, param))
-          func params
-      in
-      trace "app" @@
-        lift2 (fun f params -> build_appchain f params)
-        (spaces *> func)
-        (many @@ (spaces *> func))
-      <|> func
-    in
-    let if_ =
+    let if_expr =
       trace "if" @@
         lift3 (fun cond t f -> Utt.If (cond, t, f))
         (string "if" *> spaces *> expr)
         (string "then" *> spaces *> expr)
         (string "else" *> spaces *> expr)
-      <|> app
     in
-    spaces *> if_ <* spaces)
+    let entry_point = let_expr <|> fun_expr <|> if_expr <|> term in
+    spaces *> entry_point <* spaces)
